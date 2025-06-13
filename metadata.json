@@ -1,0 +1,9 @@
+{
+  "name": "AiDoktor.uz Telegram Mini App",
+  "description": "Sun'iy intellektga asoslangan tibbiy maslahat platformasi. Foydalanuvchilarga alomatlar va tibbiy hujjatlar asosida dastlabki taxminlar va salomatlik tahlillarini taqdim etadi.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "prompt": ""
+}

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>AiDoktor.uz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+      /* For blinking banner animation */
+      @keyframes fadeInOut {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+      .animate-fadeInOut {
+        animation: fadeInOut 3s infinite;
+      }
+
+      @keyframes animatedGradient {
+        0% { background-position: 0% 50%; }
+        25% { background-position: 50% 100%; }
+        50% { background-position: 100% 50%; }
+        75% { background-position: 50% 0%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      #theme-body { 
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden; /* Prevent horizontal scrollbar */
+        background-color: #f0f8ff; /* AliceBlue - very light blue base */
+        color: #2c3e50; /* Dark desaturated blue for text */
+        -webkit-font-smoothing: antialiased; /* For Chrome/Safari */
+        -moz-osx-font-smoothing: grayscale; /* For Firefox */
+      }
+
+      #root > div {
+        transform: translateZ(0px); 
+      }
+
+      #background-animation-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; 
+        overflow: hidden;
+        /* Updated Gradient: Sky Blue, Soft Pink, Light Mint, Pale Yellow */
+        background: linear-gradient(145deg, #e0f2fe, #fce7f3, #d1fae5, #fef3c7, #e0f2fe); 
+        background-size: 400% 400%; /* Increased size for smoother transition */
+        animation: animatedGradient 25s ease infinite; /* Slightly faster */
+      }
+
+      .particle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0; 
+        animation: starAnimation linear infinite;
+        background-color: #fffacd; /* LemonChiffon - very pale soft yellow */
+        box-shadow: 0 0 4px #fff, 0 0 7px #fafad2, 0 0 12px #fffacd; /* Softer, brighter glow */
+        will-change: transform, opacity; 
+        backface-visibility: hidden; 
+      }
+
+      @keyframes starAnimation {
+        0% {
+          transform: translateY(10vh) scale(0.4); /* Start smaller */
+          opacity: 0;
+        }
+        20% {
+          transform: translateY(0) scale(0.8); 
+          opacity: 0.7; 
+        }
+        50% {
+          transform: scale(1); /* Max size */
+          opacity: 0.3; 
+        }
+        80% {
+          transform: translateY(0) scale(0.9);
+          opacity: 0.8; 
+        }
+        100% {
+          transform: translateY(-100vh) scale(0.2); /* End smaller */
+          opacity: 0;
+        }
+      }
+
+      .cell-particle {
+        position: absolute;
+        border-radius: 50%;
+        animation: cellAnimation linear infinite;
+        background-color: rgba(173, 216, 230, 0.08); /* LightBlue with very low alpha */
+        box-shadow: 0 0 5px rgba(173, 216, 230, 0.12), 0 0 10px rgba(173, 216, 230, 0.08), inset 0 0 3px rgba(224, 242, 254, 0.15);
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+      }
+
+      @keyframes cellAnimation {
+        0% {
+          transform: translateY(15vh) scale(0.7) rotate(0deg);
+          opacity: 0;
+        }
+        25% {
+          transform: translateY(5vh) scale(0.9) rotate(70deg);
+          opacity: 0.04; 
+        }
+        50% {
+            transform: scale(1.1) translateY(-30vh) rotate(140deg);
+            opacity: 0.08;
+        }
+        75% {
+            transform: scale(0.8) translateY(-70vh) rotate(210deg);
+            opacity: 0.04;
+        }
+        100% {
+          transform: translateY(-100vh) scale(0.6) rotate(280deg);
+          opacity: 0;
+        }
+      }
+
+      /* Custom scrollbar for Webkit browsers - New Light Theme */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #e0f2fe; /* sky-100 equivalent */
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #a5d8ff; /* lighter blue */
+        border-radius: 5px;
+        border: 2px solid #e0f2fe; 
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #79c0ff; /* brighter blue */
+      }
+
+      /* Heartbeat Loader - New Light Theme */
+      .heartbeat-loader {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px; 
+      }
+      .heartbeat-loader span {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin: 0 3px;
+        background-color: #2dd4bf; /* teal-400 - vibrant teal */
+        border-radius: 50%;
+        animation: heartbeatAnimation 1.4s infinite ease-in-out both;
+      }
+      .heartbeat-loader span:nth-child(1) { animation-delay: -0.32s; }
+      .heartbeat-loader span:nth-child(2) { animation-delay: -0.16s; }
+      /* For blue version - New Light Theme */
+      .heartbeat-loader.blue span { background-color: #60a5fa; } /* blue-400 - bright, friendly blue */
+
+      @keyframes heartbeatAnimation {
+        0%, 80%, 100% { transform: scale(0.6); opacity: 0.7; } /* Slightly increased base opacity */
+        40% { transform: scale(1.1); opacity: 1; }
+      }
+      
+      /* Modal Fade-in Scale-up Animation */
+      @keyframes fadeInScaleUp {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      .animate-fadeInScaleUp {
+        animation: fadeInScaleUp 0.3s ease-out forwards;
+      }
+
+      /* Accordion Transition for First Aid Mode */
+      .accordion-content {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out, padding-top 0.4s ease-in-out, padding-bottom 0.4s ease-in-out;
+        padding-left: 1rem; 
+        padding-right: 1rem; 
+      }
+      .accordion-content.open {
+        max-height: 1200px; 
+        opacity: 1;
+        padding-top: 1rem; 
+        padding-bottom: 1rem; 
+      }
+
+      /* Main Menu Button Enhancements - New Light Theme */
+      .main-menu-button {
+        position: relative;
+        overflow: visible; 
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
+      }
+      .main-menu-button:not(:disabled):hover,
+      .main-menu-button:not(:disabled):focus-visible {
+        transform: scale(1.04) translateY(-3px); /* Slightly adjusted lift */
+      }
+      .main-menu-button:not(:disabled):hover {
+         /* Glow color is now primarily driven by Tailwind's shadow variants based on item.glowColor */
+         box-shadow: 0 0 15px var(--glow-color, rgba(96, 165, 250, 0.3)), 0 0 25px var(--glow-color, rgba(96, 165, 250, 0.15)), 0 3px 8px rgba(0,0,0,0.1);
+      }
+      /* Specific row hover shadows can be fine-tuned with Tailwind or removed if glowColor is sufficient */
+
+      .main-menu-button:not(:disabled):focus-visible {
+        outline: 2px solid #38bdf8; /* sky-500 for focus ring */
+        outline-offset: 3px;
+        box-shadow: 0 0 15px var(--glow-color, rgba(96, 165, 250, 0.35));
+      }
+
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/client": "https://esm.sh/react-dom@^19.1.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@^1.0.1",
+    "recharts": "https://esm.sh/recharts@^2.15.3",
+    "react-dropzone": "https://esm.sh/react-dropzone@^14.3.8",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "@/App": "./App.tsx",
+    "@/types": "./types.ts",
+    "@/contexts/AppContext": "./contexts/AppContext.tsx",
+    "@/hooks/useTranslation": "./hooks/useTranslation.ts",
+    "@/components/Header": "./components/Header.tsx",
+    "@/components/QuickDiagnosisMode": "./components/QuickDiagnosisMode.tsx",
+    "@/components/ComprehensiveAnalysisMode": "./components/ComprehensiveAnalysisMode.tsx",
+    "@/components/HealthLibraryMode": "./components/HealthLibraryMode.tsx",
+    "@/components/PhysiotherapyMode": "./components/PhysiotherapyMode.tsx",
+    "@/components/CallCenterMode": "./components/CallCenterMode.tsx",
+    "@/components/OnLabMode": "./components/OnLabMode.tsx",
+    "@/components/OnlineHamshiraMode": "./components/OnlineHamshiraMode.tsx",
+    "@/components/MobileLaboratoryMode": "./components/MobileLaboratoryMode.tsx",
+    "@/components/DrugIdentifierMode": "./components/DrugIdentifierMode.tsx",
+    "@/components/FirstAidMode": "./components/FirstAidMode.tsx",
+    "@/components/AnalysisChart": "./components/AnalysisChart.tsx",
+    "@/components/LoginPage": "./components/LoginPage.tsx",
+    "@/components/RegisterPage": "./components/RegisterPage.tsx",
+    "@/components/UserCabinetPage": "./components/UserCabinetPage.tsx",
+    "@/components/AdPlaceholder": "./components/AdPlaceholder.tsx",
+    "@/components/FeatureComingSoonModal": "./components/FeatureComingSoonModal.tsx",
+    "@/components/GetInsuranceMode": "./components/GetInsuranceMode.tsx",
+    "@/components/HealthTrackerMode": "./components/HealthTrackerMode.tsx",
+    "@/components/FeatureRequiresAuthModal": "./components/FeatureRequiresAuthModal.tsx",
+    "@/components/FeatureRequiresInsuranceModal": "./components/FeatureRequiresInsuranceModal.tsx",
+    "@/services/aiService": "./services/aiService.ts",
+    "@/services/aiPrompts": "./services/aiPrompts.ts",
+    "@/data/healthArticles": "./data/healthArticles.ts",
+    "@/translations/uz": "./translations/uz.ts",
+    "@/assets/icons/UzbekistanFlagIcon": "./assets/icons/UzbekistanFlagIcon.tsx",
+    "@/assets/icons/PlayStoreIcon": "./assets/icons/PlayStoreIcon.tsx",
+    "@/assets/icons/AppStoreIcon": "./assets/icons/AppStoreIcon.tsx",
+    "@/assets/icons/QrCodePlaceholderIcon": "./assets/icons/QrCodePlaceholderIcon.tsx",
+    "@/assets/icons/MicroscopeIcon": "./assets/icons/MicroscopeIcon.tsx",
+    "@/assets/icons/LockIcon": "./assets/icons/LockIcon.tsx",
+    "@/assets/icons/AiDoktorLogoIcon": "./assets/icons/AiDoktorLogoIcon.tsx",
+    "@/assets/icons/PillIcon": "./assets/icons/PillIcon.tsx",
+    "@/assets/icons/UserIcon": "./assets/icons/UserIcon.tsx",
+    "@/assets/icons/LoginIcon": "./assets/icons/LoginIcon.tsx",
+    "@/assets/icons/LogoutIcon": "./assets/icons/LogoutIcon.tsx",
+    "@/assets/icons/HistoryIcon": "./assets/icons/HistoryIcon.tsx",
+    "@/assets/icons/DocumentTextIcon": "./assets/icons/DocumentTextIcon.tsx",
+    "@/assets/icons/SettingsIcon": "./assets/icons/SettingsIcon.tsx",
+    "@/assets/icons/FirstAidIcon": "./assets/icons/FirstAidIcon.tsx",
+    "@/assets/icons/IdleTimerIcon": "./assets/icons/IdleTimerIcon.tsx",
+    "@/assets/icons/ShareIcon": "./assets/icons/ShareIcon.tsx",
+    "@/assets/icons/FeedbackIcon": "./assets/icons/FeedbackIcon.tsx",
+    "@/assets/icons/StartIcon": "./assets/icons/StartIcon.tsx",
+    "@/assets/icons/StethoscopeIcon": "./assets/icons/StethoscopeIcon.tsx",
+    "@/assets/icons/MobileLabIcon": "./assets/icons/MobileLabIcon.tsx",
+    "@/assets/icons/InsuranceCardIcon": "./assets/icons/InsuranceCardIcon.tsx",
+    "@/assets/icons/HealthTrackerIcon": "./assets/icons/HealthTrackerIcon.tsx"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body id="theme-body" class="light-theme"> 
+    <div id="background-animation-container"></div>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+    <script>
+      // Starry and Cellular background particle generation
+      function createParticles() {
+        const container = document.getElementById('background-animation-container');
+        if (!container) return;
+        
+        const numStarParticles = 55; // Adjusted count
+        const numCellParticles = 20; // Adjusted count
+
+        // Create Star Particles
+        for (let i = 0; i < numStarParticles; i++) {
+          const particle = document.createElement('div');
+          particle.classList.add('particle');
+          
+          const size = Math.random() * 1.3 + 0.2; // Slightly smaller stars
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${100 + Math.random() * 30}%`; 
+
+          const duration = Math.random() * 25 + 20; // Duration between 20s and 45s
+          const delay = Math.random() * 25; 
+          particle.style.animationDuration = `${duration}s`;
+          particle.style.animationDelay = `-${delay}s`; 
+          
+          container.appendChild(particle);
+        }
+
+        // Create Cell Particles
+        for (let i = 0; i < numCellParticles; i++) {
+          const particle = document.createElement('div');
+          particle.classList.add('cell-particle');
+          
+          const size = Math.random() * 30 + 15; // Slightly smaller cell particles
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${100 + Math.random() * 50}%`; 
+
+          const duration = Math.random() * 40 + 30; // Slower duration
+          const delay = Math.random() * 40;
+          particle.style.animationDuration = `${duration}s`;
+          particle.style.animationDelay = `-${delay}s`;
+          
+          container.appendChild(particle);
+        }
+      }
+      // Delay particle creation slightly to ensure DOM is ready and not interfere with React init
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', createParticles);
+      } else {
+        createParticles();
+      }
+    </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
