@@ -13,32 +13,45 @@ export const RegisterPage = ({ onRegisterSuccess, onNavigateToLogin, onBack }) =
   const [registrationType, setRegistrationType] = useState<string | null>(null); 
   const [insuranceNumber, setInsuranceNumber] = useState('');
   const [adData, setAdData] = useState<{ image: string; link: string } | null>(null);
+  const [adError, setAdError] = useState<string | null>(null);
 
   useEffect(() => {
+    try {
+      const rememberedUser = localStorage.getItem('aidoktorRememberedUser');
+      if (rememberedUser) {
+        setUsername(rememberedUser);
+      }
+    } catch (e) {
+      console.warn("Could not access localStorage for 'aidoktorRememberedUser':", e);
+    }
+
     const fetchAd = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/advertisements/', {
-          params: { category: 'login', size: '320x50', is_active: true },
+        const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
+          params: { category: 'register', size: '320x50', is_active: true },
         });
         console.log('Ad API response (full):', response.data); // To'liq javobni ko'rish
         if (Array.isArray(response.data) && response.data.length > 0) {
-          const ad = response.data.find(ad => ad.category === 'login' && ad.size === '320x50' && ad.is_active);
+          const ad = response.data.find(ad => ad.category === 'register' && ad.size === '320x50' && ad.is_active);
           if (ad) {
-            const fullImageUrl = `http://127.0.0.1:8000${ad.image}`; // To'liq URL qo'shish
+            const fullImageUrl = `http://127.0.0.1:8000${ad.image}`;
             console.log('Full image URL:', fullImageUrl); // URL'ni tekshirish
             setAdData({ image: fullImageUrl, link: ad.link });
           } else {
-            console.warn('No ad found matching category "login", size "320x50", and is_active=true');
+            setAdError(t_noDynamic('adNotFound'));
+            console.warn('No ad found matching category "register", size "320x50", and is_active=true');
           }
         } else {
+          setAdError(t_noDynamic('adNotFound'));
           console.warn('Unexpected response format or no ads found');
         }
       } catch (error) {
         console.error('Failed to fetch ad:', error.response ? error.response.data : error.message);
+        setAdError(t_noDynamic('adFetchFailed'));
       }
     };
     fetchAd();
-  }, []);
+  }, [t_noDynamic]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +88,7 @@ export const RegisterPage = ({ onRegisterSuccess, onNavigateToLogin, onBack }) =
         insurance_image: null,
       };
 
-      const response = await axios.post('http://127.0.0.1:8000/users/', payload, {
+      const response = await axios.post('https://aidoktor.pythonanywhere.com/users/', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
       console.log('Registration response:', response.data);
@@ -83,6 +96,7 @@ export const RegisterPage = ({ onRegisterSuccess, onNavigateToLogin, onBack }) =
       const { access, refresh } = response.data;
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
+      localStorage.setItem('aidoktorRememberedUser', username); // Foydalanuvchi nomini saqlash
 
       const capitalizedUsername = username.charAt(0).toUpperCase() + username.slice(1);
       onRegisterSuccess({ 
@@ -110,16 +124,21 @@ export const RegisterPage = ({ onRegisterSuccess, onNavigateToLogin, onBack }) =
           <h2 className="text-3xl font-bold uppercase text-slate-800">{t_noDynamic('registerTitle')}</h2>
         </div>
         
-        {adData && (
+        {adData ? (
           <a href={adData.link} target="_blank" rel="noopener noreferrer">
             <img
               src={adData.image}
               alt="Advertisement"
               className="w-full h-auto mb-6"
-              style={{ maxHeight: '50px' }} // 320x50 uchun moslashtirish
-              onError={(e) => console.error('Image failed to load:', e)} // Yuklanmagan holatda log
+              style={{ maxHeight: '50px' }}
+              onError={(e) => {
+                console.error('Image failed to load:', e);
+                setAdError(t_noDynamic('adImageFailed'));
+              }}
             />
           </a>
+        ) : adError && (
+          <p className="text-sm text-red-500 text-center mb-6" role="alert">{adError}</p>
         )}
 
         {!registrationType ? (

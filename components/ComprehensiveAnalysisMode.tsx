@@ -41,7 +41,7 @@ const ComprehensiveAnalysisMode = ({ onBack }) => {
   // Reklama ma'lumotlarini yuklash
   const fetchAd = useCallback(async (step: string) => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/advertisements/', {
+      const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
         params: {
           category: 'analysis',
           size: step === 'upload' ? '468x60' : step === 'questions' ? '468x60' : '728x90',

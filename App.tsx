@@ -315,7 +315,7 @@ export const App: React.FC = () => {
 
     const fetchAd = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/advertisements/', {
+        const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
           params: { category: 'main', size: '728x90', is_active: true },
         });
         if (Array.isArray(response.data) && response.data.length > 0) {

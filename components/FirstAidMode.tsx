@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import AdPlaceholder from '@/components/AdPlaceholder';
+import axios from 'axios';
 
 interface SpeakerPlayIconProps extends React.SVGProps<SVGSVGElement> {
   title?: string;
@@ -12,7 +12,6 @@ const SpeakerPlayIcon: React.FC<SpeakerPlayIconProps> = ({ title, ...restProps }
     <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
   </svg>
 );
-
 
 interface FirstAidModeProps {
   onBack: () => void;
@@ -57,12 +56,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           </svg>
         </button>
         <button
-            onClick={onSpeechIconClick}
-            className="ml-3 p-1.5 text-sky-600 hover:text-sky-700"
-            aria-label={t_noDynamic('firstAidPlaySpeechComingSoon')}
-            title={t_noDynamic('firstAidPlaySpeechComingSoon')}
-          >
-            <SpeakerPlayIcon title={t_noDynamic('firstAidPlaySpeechComingSoon')} />
+          onClick={onSpeechIconClick}
+          className="ml-3 p-1.5 text-sky-600 hover:text-sky-700"
+          aria-label={t_noDynamic('firstAidPlaySpeechComingSoon')}
+          title={t_noDynamic('firstAidPlaySpeechComingSoon')}
+        >
+          <SpeakerPlayIcon title={t_noDynamic('firstAidPlaySpeechComingSoon')} />
         </button>
       </div>
       <div 
@@ -75,12 +74,12 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   );
 };
 
-
 export const FirstAidMode: React.FC<FirstAidModeProps> = ({ onBack }) => {
   const { t_noDynamic } = useTranslation();
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
   const [geolocationStatus, setGeolocationStatus] = useState('');
-
+  const [adData, setAdData] = useState<{ image: string; link: string } | null>(null);
+  const [adError, setAdError] = useState<string | null>(null);
 
   const callEmergencyNumber = "103";
   const callEmergencyNumberDisplay = "103";
@@ -108,9 +107,9 @@ export const FirstAidMode: React.FC<FirstAidModeProps> = ({ onBack }) => {
         const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=hospital+or+pharmacy+near+${latitude},${longitude}`;
         
         if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.openLink(googleMapsUrl);
+          window.Telegram.WebApp.openLink(googleMapsUrl);
         } else {
-            window.open(googleMapsUrl, '_blank');
+          window.open(googleMapsUrl, '_blank');
         }
       },
       (error) => {
@@ -125,6 +124,36 @@ export const FirstAidMode: React.FC<FirstAidModeProps> = ({ onBack }) => {
     );
   };
 
+  // Reklama ma'lumotlarini yuklash
+  const fetchAd = useCallback(async () => {
+    try {
+      const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
+        params: {
+          category: 'first_aid',
+          size: '728x90',
+          is_active: true,
+        },
+      });
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        const ad = response.data.find(ad => ad.category === 'first_aid' && ad.is_active);
+        if (ad) {
+          const fullImageUrl = `http://127.0.0.1:8000${ad.image}`;
+          setAdData({ image: fullImageUrl, link: ad.link });
+        } else {
+          setAdError(t_noDynamic('adNotFound'));
+        }
+      } else {
+        setAdError(t_noDynamic('adNotFound'));
+      }
+    } catch (error) {
+      console.error('Failed to fetch ad for FirstAid:', error.response ? error.response.data : error.message);
+      setAdError(t_noDynamic('adFetchFailed'));
+    }
+  }, [t_noDynamic]);
+
+  useEffect(() => {
+    fetchAd();
+  }, [fetchAd]);
 
   const firstAidTopics = [
     { id: 'bleeding', titleKey: 'firstAidTopicTitleBleeding', contentKey: 'firstAidBleedingContent' },
@@ -143,18 +172,28 @@ export const FirstAidMode: React.FC<FirstAidModeProps> = ({ onBack }) => {
     { id: 'kit', titleKey: 'firstAidTopicTitleKit', contentKey: 'firstAidContentComingSoon' }, 
   ];
 
-
   return (
     <>
       <div className="max-w-4xl mx-auto p-4 md:p-8 shadow-2xl rounded-lg bg-gradient-to-b from-red-50/80 to-orange-50/70 backdrop-blur-md text-slate-800">
         <h2 className="text-3xl font-bold text-center mb-2 uppercase text-slate-800">{t_noDynamic('firstAidModeTitle')}</h2>
         <p className="text-center mb-6 text-md text-slate-600">{t_noDynamic('firstAidModeSubtitle')}</p>
         
-        <AdPlaceholder
-            adType="banner_728x90"
-            className="w-full mb-6"
-            titleText={t_noDynamic('adPlaceholderFirstAid')}
-        />
+        {adData ? (
+          <a href={adData.link} target="_blank" rel="noopener noreferrer">
+            <img
+              src={adData.image}
+              alt="Advertisement"
+              className="w-full mb-6"
+              style={{ maxHeight: '90px' }}
+              onError={(e) => {
+                console.error('Image failed to load:', e);
+                setAdError(t_noDynamic('adImageFailed'));
+              }}
+            />
+          </a>
+        ) : adError && (
+          <p className="text-sm text-red-500 text-center mb-6" role="alert">{adError}</p>
+        )}
 
         <div className="mb-8 p-4 border-2 border-red-400/80 rounded-lg bg-rose-100/70 backdrop-blur-sm text-center">
           <p className="text-md font-semibold text-red-600 uppercase">{t_noDynamic('attentionTitle')}</p>
@@ -178,14 +217,13 @@ export const FirstAidMode: React.FC<FirstAidModeProps> = ({ onBack }) => {
             aria-label={t_noDynamic('firstAidFindClinicAriaLabel')}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mr-3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
             {t_noDynamic('firstAidFindClinicButton')}
           </button>
         </div>
         {geolocationStatus && <p className="text-center text-sm text-amber-600 mb-4">{geolocationStatus}</p>}
-
 
         <div className="space-y-4">
           {firstAidTopics.map(topic => {

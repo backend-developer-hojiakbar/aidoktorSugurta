@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { identifyDrugFromImage } from '@/services/aiService'; 
 import { useDropzone } from 'react-dropzone';
-import AdPlaceholder from '@/components/AdPlaceholder';
+import axios from 'axios';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const MAX_IMAGE_SIZE_MB = 5;
@@ -14,7 +14,14 @@ export const DrugIdentifierMode = ({ onBack }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState(null);
-
+  const [adDataUpload, setAdDataUpload] = useState<{ image: string; link: string } | null>(null);
+  const [adDataLoading, setAdDataLoading] = useState<{ image: string; link: string } | null>(null);
+  const [adDataResult, setAdDataResult] = useState<{ image: string; link: string } | null>(null);
+  const [adDataError, setAdDataError] = useState<{ image: string; link: string } | null>(null);
+  const [adErrorUpload, setAdErrorUpload] = useState<string | null>(null);
+  const [adErrorLoading, setAdErrorLoading] = useState<string | null>(null);
+  const [adErrorResult, setAdErrorResult] = useState<string | null>(null);
+  const [adErrorError, setAdErrorError] = useState<string | null>(null);
 
   const onDrop = useCallback((acceptedFiles, fileRejections) => {
     setError(null);
@@ -95,13 +102,44 @@ export const DrugIdentifierMode = ({ onBack }) => {
     removeImage();
   };
 
+  // Reklama ma'lumotlarini yuklash
+  const fetchAd = useCallback(async (size: string, setAdData: (data: { image: string; link: string } | null) => void, setAdError: (error: string | null) => void) => {
+    try {
+      const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
+        params: {
+          category: 'medicine',
+          size: '468x60',
+          is_active: true,
+        },
+      });
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        const ad = response.data.find(ad => ad.category === 'medicine' && ad.is_active);
+        if (ad) {
+          const fullImageUrl = `http://127.0.0.1:8000${ad.image}`;
+          setAdData({ image: fullImageUrl, link: ad.link });
+        } else {
+          setAdError(t_noDynamic('adNotFound'));
+        }
+      } else {
+        setAdError(t_noDynamic('adNotFound'));
+      }
+    } catch (error) {
+      console.error(`Failed to fetch ad for size ${size}:`, error.response ? error.response.data : error.message);
+      setAdError(t_noDynamic('adFetchFailed'));
+    }
+  }, [t_noDynamic]);
+
   useEffect(() => {
+    fetchAd('banner_320x100', setAdDataUpload, setAdErrorUpload);
+    fetchAd('banner_320x50', setAdDataLoading, setAdErrorLoading);
+    fetchAd('banner_468x60', setAdDataResult, setAdErrorResult);
+    fetchAd('banner_320x50', setAdDataError, setAdErrorError);
     return () => {
       if (imagePreviewUrl) {
         URL.revokeObjectURL(imagePreviewUrl);
       }
     };
-  }, [imagePreviewUrl]);
+  }, [fetchAd, imagePreviewUrl]);
 
   const formatDrugInfo = (text) => {
     const lines = text.split('\n');
@@ -163,7 +201,6 @@ export const DrugIdentifierMode = ({ onBack }) => {
     return formattedElements;
   };
 
-
   return (
     <>
       <div className="max-w-3xl mx-auto p-4 md:p-8 shadow-2xl rounded-lg bg-gradient-to-b from-emerald-50/80 to-teal-50/70 backdrop-blur-md text-slate-800">
@@ -173,11 +210,22 @@ export const DrugIdentifierMode = ({ onBack }) => {
         <div className="space-y-6">
           {!analysisResult && !isLoading && (
             <>
-              <AdPlaceholder 
-                adType="banner_320x100" 
-                className="w-full"
-                titleText={t_noDynamic('adPlaceholderDrugUpload')}
-              />
+              {adDataUpload ? (
+                <a href={adDataUpload.link} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={adDataUpload.image}
+                    alt="Advertisement"
+                    className="w-full"
+                    style={{ maxHeight: '100px' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', e);
+                      setAdErrorUpload(t_noDynamic('adImageFailed'));
+                    }}
+                  />
+                </a>
+              ) : adErrorUpload && (
+                <p className="text-sm text-red-500 text-center mb-6" role="alert">{adErrorUpload}</p>
+              )}
               <div
                 {...getRootProps()}
                 className={`p-8 border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors
@@ -232,15 +280,26 @@ export const DrugIdentifierMode = ({ onBack }) => {
 
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-10">
-               <div className="heartbeat-loader blue mb-3"> 
-                  <span></span><span></span><span></span>
-                </div>
+              <div className="heartbeat-loader blue mb-3"> 
+                <span></span><span></span><span></span>
+              </div>
               <p className="text-lg uppercase text-slate-600 mb-3">{t_noDynamic('drugIdentifierButtonAnalyzing')}</p>
-               <AdPlaceholder 
-                adType="banner_320x50" 
-                className="max-w-md mx-auto"
-                titleText={t_noDynamic('adPlaceholderLoadingView')} 
-              />
+              {adDataLoading ? (
+                <a href={adDataLoading.link} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={adDataLoading.image}
+                    alt="Advertisement"
+                    className="max-w-md mx-auto"
+                    style={{ maxHeight: '50px' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', e);
+                      setAdErrorLoading(t_noDynamic('adImageFailed'));
+                    }}
+                  />
+                </a>
+              ) : adErrorLoading && (
+                <p className="text-sm text-red-500 text-center mb-6" role="alert">{adErrorLoading}</p>
+              )}
             </div>
           )}
 
@@ -249,11 +308,22 @@ export const DrugIdentifierMode = ({ onBack }) => {
               <h3 className={`text-xl font-semibold mb-3 uppercase ${analysisResult.wasIdentified ? 'text-green-700' : 'text-red-700'}`}>
                 {analysisResult.wasIdentified ? t_noDynamic('drugInfoResultsTitle') : t_noDynamic('drugInfoErrorTitle')}
               </h3>
-               <AdPlaceholder 
-                adType="banner_468x60" 
-                className="w-full mb-4"
-                titleText={t_noDynamic('adPlaceholderDrugResult')}
-              />
+              {adDataResult ? (
+                <a href={adDataResult.link} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={adDataResult.image}
+                    alt="Advertisement"
+                    className="w-full mb-4"
+                    style={{ maxHeight: '60px' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', e);
+                      setAdErrorResult(t_noDynamic('adImageFailed'));
+                    }}
+                  />
+                </a>
+              ) : adErrorResult && (
+                <p className="text-sm text-red-500 text-center mb-6" role="alert">{adErrorResult}</p>
+              )}
               <div className="text-sm text-slate-700 leading-relaxed">
                 {formatDrugInfo(analysisResult.responseText)}
               </div>
@@ -271,16 +341,27 @@ export const DrugIdentifierMode = ({ onBack }) => {
             </div>
           )}
 
-           {error && !isLoading && !analysisResult && ( 
-             <div className="border px-4 py-3 rounded-md bg-red-100/70 border-red-300 text-red-700 backdrop-blur-sm mt-4" role="alert">
-                <p className="text-sm mb-2">{error}</p>
-                 <AdPlaceholder 
-                    adType="banner_320x50" 
+          {error && !isLoading && !analysisResult && ( 
+            <div className="border px-4 py-3 rounded-md bg-red-100/70 border-red-300 text-red-700 backdrop-blur-sm mt-4" role="alert">
+              <p className="text-sm mb-2">{error}</p>
+              {adDataError ? (
+                <a href={adDataError.link} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={adDataError.image}
+                    alt="Advertisement"
                     className="max-w-md mx-auto mt-2"
-                    titleText={t_noDynamic('adPlaceholderErrorView')}
+                    style={{ maxHeight: '50px' }}
+                    onError={(e) => {
+                      console.error('Image failed to load:', e);
+                      setAdErrorError(t_noDynamic('adImageFailed'));
+                    }}
                   />
-              </div>
-           )}
+                </a>
+              ) : adErrorError && (
+                <p className="text-sm text-red-500 text-center mb-6" role="alert">{adErrorError}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <button

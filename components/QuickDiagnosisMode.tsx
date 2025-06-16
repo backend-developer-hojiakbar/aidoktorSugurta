@@ -87,7 +87,7 @@ const QuickDiagnosisMode = ({ onBack }: { onBack: () => void }) => {
         try {
           const response = await makeAuthenticatedRequest({
             method: 'get',
-            url: `http://127.0.0.1:8000/chat-messages/?user_id=${userId}&session_type=quick`,
+            url: `https://aidoktor.pythonanywhere.com/chat-messages/?user_id=${userId}&session_type=quick`,
           });
           const savedMessages = response.data.map((msg: any) => ({
             id: msg.id.toString(),
@@ -126,7 +126,7 @@ const QuickDiagnosisMode = ({ onBack }: { onBack: () => void }) => {
       try {
         const response = await makeAuthenticatedRequest({
           method: 'get',
-          url: 'http://127.0.0.1:8000/advertisements/',
+          url: 'https://aidoktor.pythonanywhere.com/advertisements/',
           params: { category: 'chat', size: '320x50', is_active: true },
         });
         if (Array.isArray(response.data) && response.data.length > 0) {
@@ -190,7 +190,7 @@ const QuickDiagnosisMode = ({ onBack }: { onBack: () => void }) => {
     try {
       await makeAuthenticatedRequest({
         method: 'post',
-        url: 'http://127.0.0.1:8000/chat-messages/',
+        url: 'https://aidoktor.pythonanywhere.com/chat-messages/',
         data: {
           user: userId,
           sender: message.sender,

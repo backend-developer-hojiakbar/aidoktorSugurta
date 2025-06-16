@@ -20,7 +20,7 @@ const OnLabMode = ({ onBack }) => {
   // Reklama ma'lumotlarini yuklash
   const fetchAd = useCallback(async () => {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/advertisements/', {
+      const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
         params: {
           category: 'onlab',
           size: '468x60',

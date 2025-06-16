@@ -14,7 +14,7 @@ const CallCenterMode = ({ onBack }) => {
   useEffect(() => {
     const fetchAd = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/advertisements/', {
+        const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
           params: { category: 'call_center', size: '468x60', is_active: true },
         });
         console.log('Ad API response (full):', response.data);

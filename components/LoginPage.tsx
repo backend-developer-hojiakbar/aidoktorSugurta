@@ -27,7 +27,7 @@ const LoginPage = ({ onLoginSuccess, onNavigateToRegister, onBack }) => {
 
     const fetchAd = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/advertisements/', {
+        const response = await axios.get('https://aidoktor.pythonanywhere.com/advertisements/', {
           params: { category: 'login', size: '320x50', is_active: true },
         });
         if (Array.isArray(response.data) && response.data.length > 0) {
@@ -59,7 +59,7 @@ const LoginPage = ({ onLoginSuccess, onNavigateToRegister, onBack }) => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post('http://127.0.0.1:8000/login/', {
+      const response = await axios.post('https://aidoktor.pythonanywhere.com/login/', {
         username,
         password,
       }, {
@@ -78,7 +78,7 @@ const LoginPage = ({ onLoginSuccess, onNavigateToRegister, onBack }) => {
       }
 
       // Foydalanuvchi ma'lumotlarini olish uchun users/ endpointidan foydalanamiz
-      const userResponse = await axios.get('http://127.0.0.1:8000/users/', {
+      const userResponse = await axios.get('https://aidoktor.pythonanywhere.com/users/', {
         headers: { 'Authorization': `Bearer ${access}` }
       });
       console.log('User data response:', userResponse.data);
