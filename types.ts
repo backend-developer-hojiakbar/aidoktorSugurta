@@ -1,20 +1,20 @@
 export const AppMode = {
-  None: 0,
-  QuickDiagnosis: 1,
-  ComprehensiveAnalysis: 2,
-  HealthLibrary: 3,
-  Physiotherapy: 4,
-  CallCenter: 5,
-  OnLab: 6,
-  DrugIdentifier: 7,
-  Login: 8,
-  Register: 9,
-  UserCabinet: 10,
-  FirstAid: 11,
-  OnlineHamshira: 12,
-  MobileLaboratory: 13,
-  GetInsurance: 14, // Yangi rejim: Sug'urta olish
-  HealthTracker: 15, // Yangi rejim: Salomatlik Kundaligi
+  None: 'none',
+  QuickDiagnosis: 'quick-diagnosis',
+  ComprehensiveAnalysis: 'comprehensive-analysis',
+  HealthLibrary: 'health-library',
+  Physiotherapy: 'physiotherapy',
+  CallCenter: 'call-center',
+  OnLab: 'on-lab',
+  DrugIdentifier: 'drug-identifier',
+  Login: 'login',
+  Register: 'register',
+  UserCabinet: 'user-cabinet',
+  FirstAid: 'first-aid',
+  OnlineHamshira: 'online-hamshira',
+  MobileLaboratory: 'mobile-laboratory',
+  GetInsurance: 'get-insurance',
+  HealthTracker: 'health-tracker'
 };
 Object.freeze(AppMode);
 

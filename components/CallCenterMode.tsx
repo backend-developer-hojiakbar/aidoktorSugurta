@@ -1,33 +1,80 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import AdPlaceholder from '@/components/AdPlaceholder';
+import axios from 'axios';
 
 const CallCenterMode = ({ onBack }) => {
   const { t, t_noDynamic } = useTranslation();
+  const [adData, setAdData] = useState<{ image: string; link: string } | null>(null);
+  const [adError, setAdError] = useState<string | null>(null);
 
   const callCenterNumber = "+998732000073";
   const callCenterNumberDisplay = "+998 73 200 00 73";
+
+  useEffect(() => {
+    const fetchAd = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/advertisements/', {
+          params: { category: 'call_center', size: '468x60', is_active: true },
+        });
+        console.log('Ad API response (full):', response.data);
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          const ad = response.data.find((ad: any) => ad.category === 'call_center' && ad.size === '468x60' && ad.is_active);
+          if (ad) {
+            const fullImageUrl = `http://127.0.0.1:8000${ad.image}`;
+            console.log('Full image URL:', fullImageUrl);
+            setAdData({ image: fullImageUrl, link: ad.link });
+          } else {
+            setAdError(t_noDynamic('adNotFound'));
+          }
+        } else {
+          setAdError(t_noDynamic('adNotFound'));
+        }
+      } catch (error) {
+        console.error('Failed to fetch ad:', error.response ? error.response.data : error.message);
+        setAdError(t_noDynamic('adFetchFailed'));
+      }
+    };
+    fetchAd();
+  }, [t_noDynamic]);
 
   return (
     <>
       <div className="max-w-2xl mx-auto p-6 md:p-10 shadow-2xl rounded-lg text-center bg-gradient-to-b from-sky-100/80 to-blue-100/70 backdrop-blur-md text-slate-800">
         <h2 className="text-3xl font-bold mb-6 uppercase text-slate-800">{t_noDynamic('callCenterTitle')}</h2>
-        
-        <AdPlaceholder 
-          adType="banner_468x60" 
-          className="max-w-2xl mx-auto mb-6"
-          titleText={t_noDynamic('adPlaceholderCallCenter')}
-        />
+
+        {adData ? (
+          <a href={adData.link} target="_blank" rel="noopener noreferrer">
+            <img
+              src={adData.image}
+              alt="Call Center Advertisement"
+              className="w-full h-auto mb-6"
+              style={{ maxHeight: '60px' }}
+              onError={(e) => {
+                console.error('Image failed to load:', e);
+                setAdError(t_noDynamic('adImageFailed'));
+              }}
+            />
+          </a>
+        ) : adError ? (
+          <p className="text-sm text-red-500 text-center mb-6" role="alert">{adError}</p>
+        ) : (
+          <AdPlaceholder
+            adType="banner_468x60"
+            className="max-w-2xl mx-auto mb-6"
+            titleText={t_noDynamic('adPlaceholderCallCenter')}
+          />
+        )}
 
         <p className="mb-8 text-lg leading-relaxed uppercase text-slate-600">
           {t_noDynamic('callCenterDescriptionText')}
         </p>
 
         <div className="mb-8">
-          <a 
+          <a
             href={`tel:${callCenterNumber}`}
             className="text-4xl md:text-5xl font-bold transition-colors break-all inline-block p-3 border-2 rounded-lg text-sky-600 hover:text-sky-700 border-sky-500/80 hover:border-sky-600"
-            aria-label={t('callCenterAriaCallNumber', { number: callCenterNumberDisplay})}
+            aria-label={t('callCenterAriaCallNumber', { number: callCenterNumberDisplay })}
           >
             {callCenterNumberDisplay}
           </a>
@@ -43,7 +90,7 @@ const CallCenterMode = ({ onBack }) => {
           </svg>
           {t_noDynamic('callCenterCallButton')}
         </a>
-        
+
         <div className="text-sm p-4 border rounded-md text-slate-600 border-slate-300/70 bg-slate-50/50 backdrop-blur-sm">
           <p className="font-semibold mb-2 text-base uppercase text-slate-700">{t_noDynamic('callCenterWorkingHoursTitle')}</p>
           <p className="uppercase">{t_noDynamic('callCenterMonSat')}: <span className="text-slate-800">{t_noDynamic('callCenterTime0900to1800')}</span></p>
@@ -55,7 +102,7 @@ const CallCenterMode = ({ onBack }) => {
       </div>
       <button
         onClick={onBack}
-        className="flex items-center justify-center mx-auto space-x-2 text-base py-3 px-5 rounded-lg transition-colors uppercase text-sky-600 hover:text-sky-700 hover:bg-sky-100/70 backdrop-blur-sm mt-2 border border-sky-500 hover:border-sky-600 w-full max-w-xs"  
+        className="flex items-center justify-center mx-auto space-x-2 text-base py-3 px-5 rounded-lg transition-colors uppercase text-sky-600 hover:text-sky-700 hover:bg-sky-100/70 backdrop-blur-sm mt-2 border border-sky-500 hover:border-sky-600 w-full max-w-xs"
         aria-label={t_noDynamic('backToMainMenuButton')}
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
